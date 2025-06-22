@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Bingo Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .lobby {
+            display: block;
+        }
+
+        .game-screen {
+            display: none;
+        }
+
+        .player-input {
+            margin-bottom: 30px;
+        }
+
+        .player-input input {
+            padding: 15px 20px;
+            font-size: 18px;
+            border: none;
+            border-radius: 50px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            margin-right: 15px;
+            min-width: 250px;
+            backdrop-filter: blur(5px);
+        }
+
+        .player-input input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #48cab2, #2dd4bf);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(72, 202, 178, 0.4);
+        }
+
+        .players-list {
+            margin: 30px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .players-list h3 {
+            margin-bottom: 15px;
+            color: #feca57;
+        }
+
+        .player-item {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .countdown {
+            font-size: 2rem;
+            margin: 20px 0;
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .current-number {
+            font-size: 3rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .called-numbers {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            max-width: 300px;
+        }
+
+        .called-number {
+            width: 30px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .bingo-container {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .bingo-board {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .board-title {
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            color: #feca57;
+        }
+
+        .bingo-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 3px;
+            width: 250px;
+            height: 250px;
+        }
+
+        .bingo-cell {
+            background: rgba(255, 255, 255, 0.8);
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 5px;
+        }
+
+        .bingo-cell:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: scale(1.05);
+        }
+
+        .bingo-cell.marked {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            transform: scale(0.9);
+        }
+
+        .bingo-cell.free {
+            background: linear-gradient(45deg, #48cab2, #2dd4bf);
+            color: white;
+        }
+
+        .winner-announcement {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .winner-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 50px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .winner-content h2 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #feca57;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 20px;
+                margin: 20px;
+            }
+            
+            .bingo-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎱 BINGO ROYALE 🎱</h1>
+        
+        <!-- Lobby Screen -->
+        <div id="lobby" class="lobby">
+            <div class="player-input">
+                <input type="text" id="playerName" placeholder="Enter your name to join the game..." maxlength="20">
+                <button class="btn btn-primary" onclick="addPlayer()">Join Game</button>
+            </div>
+            
+            <div class="players-list">
+                <h3>Players in Lobby (<span id="playerCount">0</span>)</h3>
+                <div id="playersList"></div>
+            </div>
+            
+            <button class="btn btn-success" onclick="startGame()" id="startBtn" disabled>Start Game (Need 2+ players)</button>
+            
+            <div id="countdown" class="countdown" style="display: none;"></div>
+        </div>
+        
+        <!-- Game Screen -->
+        <div id="gameScreen" class="game-screen">
+            <div class="game-info">
+                <div>
+                    <div>Current Number:</div>
+                    <div id="currentNumber" class="current-number">-</div>
+                </div>
+                <div>
+                    <div>Called Numbers:</div>
+                    <div id="calledNumbers" class="called-numbers"></div>
+                </div>
+            </div>
+            
+            <div class="bingo-container" id="bingoContainer">
+                <!-- Bingo boards will be generated here -->
+            </div>
+            
+            <button class="btn btn-primary" onclick="resetGame()" style="margin-top: 30px;">New Game</button>
+        </div>
+    </div>
+    
+    <!-- Winner Announcement -->
+    <div id="winnerModal" class="winner-announcement">
+        <div class="winner-content">
+            <h2>🎉 BINGO! 🎉</h2>
+            <p id="winnerText"></p>
+            <button class="btn btn-success" onclick="closeWinnerModal()" style="margin-top: 20px;">Continue</button>
+        </div>
+    </div>
+
+    <script>
+        let players = [];
+        let gameState = 'lobby'; // 'lobby', 'countdown', 'playing', 'finished'
+        let calledNumbers = [];
+        let currentNumber = null;
+        let gameInterval = null;
+        let countdownInterval = null;
+        let playerBoards = {};
+
+        // Generate random bingo board
+        function generateBingoBoard() {
+            const board = Array(5).fill().map(() => Array(5).fill(null));
+            const ranges = [
+                [1, 15],   // B
+                [16, 30],  // I
+                [31, 45],  // N
+                [46, 60],  // G
+                [61, 75]   // O
+            ];
+
+            // Generate numbers for each column
+            for (let col = 0; col < 5; col++) {
+                const [min, max] = ranges[col];
+                const availableNumbers = [];
+                
+                // Create array of available numbers for this column
+                for (let i = min; i <= max; i++) {
+                    availableNumbers.push(i);
+                }
+                
+                // Shuffle the available numbers
+                for (let i = availableNumbers.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [availableNumbers[i], availableNumbers[j]] = [availableNumbers[j], availableNumbers[i]];
+                }
+                
+                // Assign 5 unique numbers to this column (or FREE space for center)
+                for (let row = 0; row < 5; row++) {
+                    if (row === 2 && col === 2) {
+                        board[row][col] = 'FREE';
+                    } else {
+                        // Use different indices to avoid the center position
+                        const numberIndex = row < 2 ? row : row - 1;
+                        board[row][col] = availableNumbers[numberIndex];
+                    }
+                }
+            }
+            
+            return board;
+        }
+
+        // Add player to the game
+        function addPlayer() {
+            const nameInput = document.getElementById('playerName');
+            const playerName = nameInput.value.trim();
+            
+            if (!playerName) {
+                alert('Please enter your name!');
+                return;
+            }
+            
+            if (players.includes(playerName)) {
+                alert('This name is already taken!');
+                return;
+            }
+            
+            players.push(playerName);
+            playerBoards[playerName] = {
+                board: generateBingoBoard(),
+                marked: Array(5).fill().map(() => Array(5).fill(false))
+            };
+            
+            // Mark center as free space
+            playerBoards[playerName].marked[2][2] = true;
+            
+            nameInput.value = '';
+            updatePlayersDisplay();
+        }
+
+        // Update players display
+        function updatePlayersDisplay() {
+            const playersList = document.getElementById('playersList');
+            const playerCount = document.getElementById('playerCount');
+            const startBtn = document.getElementById('startBtn');
+            
+            playersList.innerHTML = players.map(name => 
+                `<span class="player-item">${name}</span>`
+            ).join('');
+            
+            playerCount.textContent = players.length;
+            
+            if (players.length >= 2) {
+                startBtn.disabled = false;
+                startBtn.textContent = 'Start Game';
+            } else {
+                startBtn.disabled = true;
+                startBtn.textContent = 'Start Game (Need 2+ players)';
+            }
+        }
+
+        // Start the game
+        function startGame() {
+            if (players.length < 2) {
+                alert('Need at least 2 players to start!');
+                return;
+            }
+            
+            gameState = 'countdown';
+            const countdownDiv = document.getElementById('countdown');
+            countdownDiv.style.display = 'block';
+            
+            let timeLeft = 30;
+            countdownDiv.textContent = `Game starting in ${timeLeft} seconds...`;
+            
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                countdownDiv.textContent = `Game starting in ${timeLeft} seconds...`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    startBingoGame();
+                }
+            }, 1000);
+        }
+
+        // Start the actual bingo game
+        function startBingoGame() {
+            gameState = 'playing';
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            
+            createBingoBoards();
+            startNumberCalling();
+        }
+
+        // Create bingo boards for all players
+        function createBingoBoards() {
+            const container = document.getElementById('bingoContainer');
+            container.innerHTML = '';
+            
+            players.forEach(playerName => {
+                const boardDiv = document.createElement('div');
+                boardDiv.className = 'bingo-board';
+                boardDiv.innerHTML = `
+                    <div class="board-title">${playerName}'s Board</div>
+                    <div class="bingo-grid" id="board-${playerName}"></div>
+                `;
+                container.appendChild(boardDiv);
+                
+                const grid = document.getElementById(`board-${playerName}`);
+                const board = playerBoards[playerName].board;
+                const marked = playerBoards[playerName].marked;
+                
+                for (let row = 0; row < 5; row++) {
+                    for (let col = 0; col < 5; col++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'bingo-cell';
+                        cell.textContent = board[row][col];
+                        
+                        if (board[row][col] === 'FREE') {
+                            cell.classList.add('free');
+                        }
+                        
+                        if (marked[row][col]) {
+                            cell.classList.add('marked');
+                        }
+                        
+                        cell.onclick = () => markCell(playerName, row, col);
+                        grid.appendChild(cell);
+                    }
+                }
+            });
+        }
+
+        // Mark a cell on the bingo board
+        function markCell(playerName, row, col) {
+            const board = playerBoards[playerName].board;
+            const marked = playerBoards[playerName].marked;
+            const cellValue = board[row][col];
+            
+            if (cellValue === 'FREE') return;
+            
+            // Only allow marking if the number has been called
+            if (!calledNumbers.includes(cellValue)) {
+                alert('This number has not been called yet!');
+                return;
+            }
+            
+            marked[row][col] = !marked[row][col];
+            updateBoardDisplay(playerName);
+            
+            if (checkForBingo(playerName)) {
+                announceWinner(playerName);
+            }
+        }
+
+        // Update board display
+        function updateBoardDisplay(playerName) {
+            const grid = document.getElementById(`board-${playerName}`);
+            const cells = grid.children;
+            const marked = playerBoards[playerName].marked;
+            
+            let cellIndex = 0;
+            for (let row = 0; row < 5; row++) {
+                for (let col = 0; col < 5; col++) {
+                    if (marked[row][col]) {
+                        cells[cellIndex].classList.add('marked');
+                    } else {
+                        cells[cellIndex].classList.remove('marked');
+                    }
+                    cellIndex++;
+                }
+            }
+        }
+
+        // Start calling numbers
+        function startNumberCalling() {
+            const allNumbers = [];
+            for (let i = 1; i <= 75; i++) {
+                allNumbers.push(i);
+            }
+            
+            // Shuffle numbers
+            for (let i = allNumbers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allNumbers[i], allNumbers[j]] = [allNumbers[j], allNumbers[i]];
+            }
+            
+            let numberIndex = 0;
+            
+            gameInterval = setInterval(() => {
+                if (numberIndex >= allNumbers.length || gameState !== 'playing') {
+                    clearInterval(gameInterval);
+                    return;
+                }
+                
+                const number = allNumbers[numberIndex];
+                calledNumbers.push(number);
+                currentNumber = number;
+                
+                document.getElementById('currentNumber').textContent = number;
+                updateCalledNumbersDisplay();
+                
+                numberIndex++;
+            }, 3000); // Call a number every 3 seconds
+        }
+
+        // Update called numbers display
+        function updateCalledNumbersDisplay() {
+            const container = document.getElementById('calledNumbers');
+            container.innerHTML = calledNumbers.slice(-20).map(num => 
+                `<div class="called-number">${num}</div>`
+            ).join('');
+        }
+
+        // Check for bingo
+        function checkForBingo(playerName) {
+            const marked = playerBoards[playerName].marked;
+            
+            // Check rows
+            for (let row = 0; row < 5; row++) {
+                if (marked[row].every(cell => cell)) return true;
+            }
+            
+            // Check columns
+            for (let col = 0; col < 5; col++) {
+                if (marked.every(row => row[col])) return true;
+            }
+            
+            // Check diagonals
+            if (marked.every((row, i) => row[i])) return true;
+            if (marked.every((row, i) => row[4 - i])) return true;
+            
+            return false;
+        }
+
+        // Announce winner
+        function announceWinner(playerName) {
+            gameState = 'finished';
+            clearInterval(gameInterval);
+            
+            document.getElementById('winnerText').textContent = `${playerName} wins!`;
+            document.getElementById('winnerModal').style.display = 'flex';
+        }
+
+        // Close winner modal
+        function closeWinnerModal() {
+            document.getElementById('winnerModal').style.display = 'none';
+        }
+
+        // Reset game
+        function resetGame() {
+            gameState = 'lobby';
+            players = [];
+            calledNumbers = [];
+            currentNumber = null;
+            playerBoards = {};
+            
+            clearInterval(gameInterval);
+            clearInterval(countdownInterval);
+            
+            document.getElementById('lobby').style.display = 'block';
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('countdown').style.display = 'none';
+            
+            updatePlayersDisplay();
+        }
+
+        // Allow Enter key to add player
+        document.getElementById('playerName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addPlayer();
+            }
+        });
+    </script>
+</body>
+</html>
